@@ -46,8 +46,6 @@ export interface ConvertCommandCliArgs extends SharedCommandCliArgs {
   handleSpreadReactProps: boolean;
   // Don't replace all $ with .
   keepPrivateTypes: boolean;
-  // Array of directories or files to ignore
-  ignore: Array<string>;
   // Force all file extensions to end in tsx
   forceTSX: boolean;
   // Skip renaming @noflow annotated files

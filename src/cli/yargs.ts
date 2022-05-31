@@ -37,10 +37,6 @@ export const parseCommands = (
       "Run the codemod on multiple paths."
     )
     .example(
-      "$0 convert --path . --ignore flow_typed/ ",
-      "Ignore files from conversion."
-    )
-    .example(
       "$0 convert --path ./src --format csv --output ./migration-report.csv",
       "Generate a CSV migration report."
     )
@@ -152,11 +148,6 @@ export const parseCommands = (
             type: "array",
             default: ["."],
             describe: "Path to source files for conversion.",
-          })
-          .option("ignore", {
-            type: "array",
-            default: [],
-            describe: "Directories or files to ignore.",
           })
           .option("format", {
             alias: "f",
