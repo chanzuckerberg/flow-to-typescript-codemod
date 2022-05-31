@@ -60,20 +60,19 @@ typescriptify [command]
 
 Commands:
   typescriptify setup    Set your project up to support TypeScript.
-  typescriptify convert  Convert Flow-typed files to TypeScript.                              
-  typescriptify fix      Use the TypeScript compiler to identify and fix errors.             
+  typescriptify convert  Convert Flow-typed files to TypeScript.
+  typescriptify fix      Use the TypeScript compiler to identify and fix errors.
 
 Options:
-  --version  Show version number                                                                                                                           
-  --help     Show help                                                                                                                                     
+  --version  Show version number
+  --help     Show help
 
 Examples:
   typescriptify <setup,convert,fix> --help                                         Show usage instructions for a specific command.
   typescriptify convert --path .                                                   Run the codemod in dry-run mode.
   typescriptify convert --path src/ test/                                          Run the codemod on multiple paths.
-  typescriptify convert --path . --ignore flow_typed/                              Ignore files from conversion.
   typescriptify convert --path ./src --format csv --output ./migration-report.csv  Generate a CSV migration report.
-  typescriptify convert --path . --write --delete                                  Fully convert a project to TypeScript, 
+  typescriptify convert --path . --write --delete                                  Fully convert a project to TypeScript,
                                                                                    writing files and deleting Flow files.
   typescriptify convert --path . --write --target=./dist                           Specify a directory to output the TypeScript files.
   typescriptify fix --autoSuppressErrors --removeUnused                            Remove unused ts-expect-errors, and add any for current errors.
@@ -119,7 +118,7 @@ These types are defined in `./flow.d.ts`, and you'll need to do some setup to ma
 ## 📌 Advanced usage
 <details>
   <summary>Click to expand!</summary>
-  
+
 ### Automatically suppressing TypeScript errors
 After conversion, there will likely be a number of errors in the converted TypeScript files. These errors can be the result of pre-existing issues in the Flow code, issues with the installed types, or issues with the codemod. For many conversions, the number of errors may be challenging to fix before merging. The auto suppression feature will run the TypeScript compiler against your converted code, and add [ts-expect-error](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-9.html#ts-ignore-or-ts-expect-error) annotations that suppress errors. This allows you to suppress the errors to get a passing type check, and then fix the errors in future changes. If you fix an error that fixes other errors, you can use the `removeUnused` flag to automatically remove unused suppressions.
 
@@ -196,4 +195,3 @@ If you have questions about this code or our migration, you can reach out to mem
     <td align="center"><a href="https://github.com/alunny"><img src="https://avatars.githubusercontent.com/u/48361?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Andrew Lunny</b></sub></a><br /></td>
   </tr>
 </table>
-

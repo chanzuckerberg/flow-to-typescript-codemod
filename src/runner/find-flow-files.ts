@@ -8,7 +8,6 @@
 
 import path from "path";
 import fs from "fs-extra";
-import ignore from "ignore";
 import MigrationReporter from "./migration-reporter";
 
 /**
@@ -31,7 +30,6 @@ export type FlowFileList = Array<{ filePath: string; fileType: FlowFileType }>;
  */
 export function findFlowFilesAsync(
   rootDirectory: string,
-  ignoredDirectories: Array<string>,
   reporter: MigrationReporter
 ): Promise<FlowFileList> {
   return new Promise((_resolve, _reject) => {
@@ -41,8 +39,6 @@ export function findFlowFilesAsync(
     let waiting = 0;
     // All the valid file paths that we have found.
     const filePaths: FlowFileList = [];
-    // Track ignored files
-    const ig = ignore().add(ignoredDirectories);
 
     // Begin the recursion!
     processDirectory(rootDirectory, reporter);
@@ -89,11 +85,6 @@ export function findFlowFilesAsync(
       waiting++;
       // Get the file path for this file.
       const filePath = path.join(directory, fileName);
-      // Check whether file should be skipped
-      if (ig.ignores(filePath)) {
-        done();
-        return;
-      }
       // Get the stats for the file.
       fs.lstat(filePath, (error, stats) => {
         if (error) {
