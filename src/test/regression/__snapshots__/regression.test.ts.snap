@@ -1,7 +1,8 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Regression tests flow_typescript_differences 1`] = `
-"import {Flow} from 'flow-to-typescript-codemod';
+"import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
+import {Flow} from 'flow-to-typescript-codemod';
 // Examples taken from https://github.com/niieani/typescript-vs-flowtype
 
 // bounded polymorphism
@@ -64,10 +65,10 @@ var props = {
 function fnUnion(x?: number) {}
 
 // Type inference
-function addOne(a: any) {
+function addOne(a: $TSFixMeAny) {
   return a + 1;
 }
-const addOneArrow = (a: any) => a + 1;
+const addOneArrow = (a: $TSFixMeAny) => a + 1;
 
 const onePlus = [1, 2, 3].map(function addOne(a) {
   return a + 1;

@@ -47,7 +47,8 @@ function actuallyMigrateType(
 ): t.TSType {
   switch (flowType.type) {
     case "AnyTypeAnnotation":
-      return t.tsAnyKeyword();
+      state.usedFlowCompatTypes.add("$TSFixMeAny");
+      return FlowCompatTypes.any;
 
     case "ArrayTypeAnnotation":
       return t.tsArrayType(migrateType(reporter, state, flowType.elementType));
@@ -68,7 +69,8 @@ function actuallyMigrateType(
         state.config.filePath,
         flowType.loc as t.SourceLocation
       );
-      return t.tsAnyKeyword();
+      state.usedFlowCompatTypes.add("$TSFixMeAny");
+      return FlowCompatTypes.any;
 
     case "FunctionTypeAnnotation": {
       const typeParams = flowType.typeParameters
@@ -269,7 +271,8 @@ function actuallyMigrateType(
           state.config.filePath,
           id.loc as t.SourceLocation
         );
-        return t.tsAnyKeyword();
+        state.usedFlowCompatTypes.add("$TSFixMeAny");
+        return FlowCompatTypes.any;
       }
 
       // `$PropertyType<T, K>` → `T[K]`
@@ -401,106 +404,6 @@ function actuallyMigrateType(
         );
       }
 
-      // `JestMockFn` → `jest.mockedFunction`
-      if (id.type === "Identifier" && id.name === "JestMockFn") {
-        const parent = metaData?.path?.parentPath;
-
-        function getFqnForMemberExpression(
-          expression: t.MemberExpression
-        ): string {
-          const fqn: Array<string> = [];
-          let currentExpression = expression;
-
-          while (currentExpression.property !== undefined) {
-            fqn.push((currentExpression.property as t.Identifier).name);
-            currentExpression = currentExpression.object as t.MemberExpression;
-          }
-          fqn.push((currentExpression as unknown as t.Identifier).name);
-
-          return fqn.reverse().reduce((prev, curr, i) => {
-            return `${prev}${i > 0 ? "." : ""}${curr}`;
-          }, "");
-        }
-
-        // `(test: JestMockFn<any,any>)` → (test as JestMockFn<typeof test>)
-        if (
-          parent &&
-          parent.node.type === "ExpressionStatement" &&
-          parent.node.expression &&
-          parent.node.expression.type === "TypeCastExpression" &&
-          parent.node.expression.expression &&
-          parent.node.expression.expression.type === "Identifier"
-        ) {
-          return t.tsTypeReference(
-            t.identifier("jest.MockedFunction"),
-            t.tsTypeParameterInstantiation([
-              t.tsTypeQuery(
-                t.identifier(parent.node.expression.expression.name)
-              ),
-            ])
-          );
-          // `(test.a: JestMockFn<any,any>)` → `(test.a as JestMockFn<typeof test.a>)`
-        } else if (
-          parent &&
-          parent.node.type === "ExpressionStatement" &&
-          parent.node.expression &&
-          parent.node.expression.type === "TypeCastExpression" &&
-          parent.node.expression.expression &&
-          parent.node.expression.expression.type === "MemberExpression"
-        ) {
-          try {
-            return t.tsTypeReference(
-              t.identifier("jest.MockedFunction"),
-              t.tsTypeParameterInstantiation([
-                t.tsTypeQuery(
-                  t.identifier(
-                    getFqnForMemberExpression(parent.node.expression.expression)
-                  )
-                ),
-              ])
-            );
-          } catch (_e) {
-            // These are just test functions so return the default if fetching the member expression fails for whatever reason
-            return t.tsTypeReference(
-              t.identifier("jest.MockedFunction"),
-              t.tsTypeParameterInstantiation([t.tsAnyKeyword()])
-            );
-          }
-
-          // Handle function calls following the cast `(test.a: JestMockFn<any,any>).fnCall()` → `(test.a as JestMockFn<typeof test.a>).fnCall()`
-        } else if (
-          parent &&
-          parent.node.type === "MemberExpression" &&
-          parent.node.object.type === "TypeCastExpression"
-        ) {
-          try {
-            return t.tsTypeReference(
-              t.identifier("jest.MockedFunction"),
-              t.tsTypeParameterInstantiation([
-                t.tsTypeQuery(
-                  t.identifier(
-                    getFqnForMemberExpression(
-                      parent.node.object.expression as t.MemberExpression
-                    )
-                  )
-                ),
-              ])
-            );
-          } catch (e) {
-            // These are just test functions so return the default if fetching the member expression fails for whatever reason
-            return t.tsTypeReference(
-              t.identifier("jest.MockedFunction"),
-              t.tsTypeParameterInstantiation([t.tsAnyKeyword()])
-            );
-          }
-        } else {
-          return t.tsTypeReference(
-            t.identifier("jest.MockedFunction"),
-            t.tsTypeParameterInstantiation([t.tsAnyKeyword()])
-          );
-        }
-      }
-
       // `window.SyntheticMouseEvent` → `SyntheticMouseEvent`
       if (
         id.type === "TSQualifiedName" &&
@@ -511,9 +414,13 @@ function actuallyMigrateType(
           state.config.filePath,
           id.loc as t.SourceLocation
         );
-        return id.right.name.startsWith("HTML")
-          ? t.tsTypeReference(t.identifier(id.right.name))
-          : t.tsAnyKeyword();
+
+        if (id.right.name.startsWith("HTML")) {
+          return t.tsTypeReference(t.identifier(id.right.name));
+        }
+
+        state.usedFlowCompatTypes.add("$TSFixMeAny");
+        return FlowCompatTypes.any;
       }
 
       // `React.Node` → `React.ReactElement`
@@ -792,14 +699,19 @@ function actuallyMigrateType(
 
       // class A<P = {}> {} -> class A<P = any> {}
       if (metaData?.isTypeParameter) {
-        return t.tsAnyKeyword();
+        state.usedFlowCompatTypes.add("$TSFixMeAny");
+        return FlowCompatTypes.any;
       }
 
       // function f(): {} {} -> function f(): Record<string, any> {}
       if (flowMembers.length === 0 && !metaData?.isInterfaceBody) {
+        state.usedFlowCompatTypes.add("$TSFixMeAny");
         return t.tsTypeReference(
           t.identifier("Record"),
-          t.tsTypeParameterInstantiation([t.tsAnyKeyword(), t.tsAnyKeyword()])
+          t.tsTypeParameterInstantiation([
+            FlowCompatTypes.any,
+            FlowCompatTypes.any,
+          ])
         );
       }
 

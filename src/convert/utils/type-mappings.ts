@@ -34,8 +34,12 @@ export const MomentTypes = {
 } as const;
 
 export const FlowCompatTypes = {
+  any: t.tsTypeReference(t.identifier("$TSFixMeAny")),
   function: t.tsTypeReference(t.identifier("$TSFixMeFunction")),
   object: t.tsTypeReference(t.identifier("$TSFixMeObject")),
 };
 
-export type FlowCompatTypeName = "$TSFixMeObject" | "$TSFixMeFunction";
+export type FlowCompatTypeName =
+  | "$TSFixMeAny"
+  | "$TSFixMeObject"
+  | "$TSFixMeFunction";

@@ -61,9 +61,14 @@ describe("parameter inference", () => {
     });
 
     describe("test files", () => {
-      it("uses `any` type instead of parameter inference for test files", async () => {
-        const src = `(a, b) => {a + b};`;
-        const expected = `(a: any, b: any) => {a + b};`;
+      it("uses `$TSFixMeAny` type instead of parameter inference for test files", async () => {
+        const src = dedent`
+          (a, b) => {a + b};
+        `;
+        const expected = dedent`
+          import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
+          (a: $TSFixMeAny, b: $TSFixMeAny) => {a + b};
+        `;
 
         expect(
           await transform(
@@ -186,19 +191,20 @@ describe("assigning required fields an optional value", () => {
     // const f1 = (): any => ({});
     it("should keep parentheses around arrow functions that return objects", async () => {
       const src = dedent`
-    const f1 = (arg1: string): any => ({});
+    import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
+    const f1 = (arg1: string): $TSFixMeAny => ({});
     const f2 = (arg1: string) => ({});
-    const f3 = async (arg1: string): Promise<any> => ({});
+    const f3 = async (arg1: string): Promise<$TSFixMeAny> => ({});
     const f4 = <T>(arg1: T) => ({});
     const f5 = <T>(arg1: T): T => ({});
-    const f6 = <T>(arg1: T): any => ({});
-    class Cls1 { f4 = (arg1: string): any => ({}) }
+    const f6 = <T>(arg1: T): $TSFixMeAny => ({});
+    class Cls1 { f4 = (arg1: string): $TSFixMeAny => ({}) }
     class Cls2 { f5 = async (arg1: string): Promise<object> => ({}) }
     class Cls3 { f6 = (arg1: string) => ({}) }
     const f7 = (arg1: string): () => Record<string, string> => () => ({});
     const f8 = (arg1: string): () => string => (): string => ({});
-    const f9 = (arg1: string): any => ({foo: 'bar'});
-    const f10 = (arg1: string): any => ({foo() {}});
+    const f9 = (arg1: string): $TSFixMeAny => ({foo: 'bar'});
+    const f10 = (arg1: string): $TSFixMeAny => ({foo() {}});
     var f11 = {foo: (arg1: string): object => ({})}
     `;
 

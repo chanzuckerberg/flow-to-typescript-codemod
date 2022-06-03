@@ -59,7 +59,7 @@ describe("transform type annotations", () => {
   it("does not convert void return types for class methods to undefined", async () => {
     const src = dedent`
     class C {
-      fn(): void {} 
+      fn(): void {}
     }`;
     expect(await transform(src)).toBe(src);
   });
@@ -226,74 +226,6 @@ describe("transform type annotations", () => {
     expect(await transform(src)).toBe(expected);
   });
 
-  it("Converts JestMockFn", async () => {
-    const src = dedent`
-    const test: string = "";
-    (test: JestMockFn<any, any>);
-    `;
-    const expected = dedent`
-    const test: string = "";
-    (test as jest.MockedFunction<typeof test>);
-    `;
-    expect(await transform(src)).toBe(expected);
-  });
-
-  it("Converts JestMockFn with function call", async () => {
-    const src = dedent`
-    const test: string = "";
-    (test: JestMockFn<any, any>).mockImplementation();
-    `;
-    const expected = dedent`
-    const test: string = "";
-    (test as jest.MockedFunction<typeof test>).mockImplementation();
-    `;
-    expect(await transform(src)).toBe(expected);
-  });
-
-  it("Converts JestMockFn on object", async () => {
-    const src = dedent`
-    (test.a: JestMockFn<any, any>);
-    `;
-    const expected = dedent`
-    (test.a as jest.MockedFunction<typeof test.a>);
-    `;
-    expect(await transform(src)).toBe(expected);
-  });
-
-  it("Converts JestMockFn on object with function call", async () => {
-    const src = dedent`
-    (test.a: JestMockFn<any, any>).mockImplementation();
-    `;
-    const expected = dedent`
-    (test.a as jest.MockedFunction<typeof test.a>).mockImplementation();
-    `;
-    expect(await transform(src)).toBe(expected);
-  });
-
-  it("Converts JestMockFn on nested objects", async () => {
-    const src = dedent`
-    (test.a.b: JestMockFn<any, any>);
-    `;
-    const expected = dedent`
-    (test.a.b as jest.MockedFunction<typeof test.a.b>);
-    `;
-    expect(await transform(src)).toBe(expected);
-  });
-
-  it("Converts JestMockFn where no input type is defined", async () => {
-    const src = dedent`
-    type MockApiOptions = {
-      errors: JestMockFn<any, any>
-    };
-    `;
-    const expected = dedent`
-    type MockApiOptions = {
-      errors: jest.MockedFunction<any>
-    };
-    `;
-    expect(await transform(src)).toBe(expected);
-  });
-
   // Moment
 
   it("Converts MomentDuration", async () => {
@@ -321,7 +253,10 @@ describe("transform type annotations", () => {
 
   it("Converts unknown window namespaced types to any", async () => {
     const src = `type Test = window.UnknownHtmlElement;`;
-    const expected = `type Test = any;`;
+    const expected = dedent`
+    import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
+    type Test = $TSFixMeAny;
+    `;
     expect(await transform(src)).toBe(expected);
   });
 
@@ -528,16 +463,18 @@ describe("transform type annotations", () => {
   });
 
   describe("Empty object type", () => {
-    it("Converts {} to Record<any, any> in a functions return", async () => {
+    it("Converts {} to Record<$TSFixMeAny, $TSFixMeAny> in a functions return", async () => {
       const src = dedent`function f(): {} {return {}}
     let af: () => {}
     class C {
       m(): {} {return {}}
     }`;
-      const expected = dedent`function f(): Record<any, any> {return {}}
-    let af: () => Record<any, any>
+      const expected = dedent`
+    import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
+    function f(): Record<$TSFixMeAny, $TSFixMeAny> {return {}}
+    let af: () => Record<$TSFixMeAny, $TSFixMeAny>
     class C {
-      m(): Record<any, any> {return {}}
+      m(): Record<$TSFixMeAny, $TSFixMeAny> {return {}}
     }`;
 
       const state = stateBuilder({});
@@ -562,33 +499,45 @@ class C {
       expect(await transform(src, state)).toBe(src);
     });
 
-    it("converts default empty object types to any", async () => {
+    it("converts default empty object types to $TSFixMeAny", async () => {
       const src = `function f<T = {}>(a: T) {}`;
-      const expected = `function f<T = any>(a: T) {}`;
+      const expected = dedent`
+      import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
+      function f<T = $TSFixMeAny>(a: T) {}`;
       expect(await transform(src)).toBe(expected);
     });
 
-    it("converts default empty object types to any in classes", async () => {
+    it("converts default empty object types to $TSFixMeAny in classes", async () => {
       const src = `class Cls<T = {}> {}`;
-      const expected = `class Cls<T = any> {}`;
+      const expected = dedent`
+      import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
+      class Cls<T = $TSFixMeAny> {}`;
       expect(await transform(src)).toBe(expected);
     });
 
     it("converts assigned object types as Record", async () => {
       const src = `const a: {} = {}`;
-      const expected = `const a: Record<any, any> = {}`;
+      const expected = dedent`
+      import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
+      const a: Record<$TSFixMeAny, $TSFixMeAny> = {}`;
       expect(await transform(src)).toBe(expected);
     });
 
     it("converts argument types as Record", async () => {
       const src = `function f(a: {}) {}`;
-      const expected = `function f(a: Record<any, any>) {}`;
+      const expected = dedent`
+      import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
+      function f(a: Record<$TSFixMeAny, $TSFixMeAny>) {}
+      `;
       expect(await transform(src)).toBe(expected);
     });
 
     it("converts type parameters as Record", async () => {
       const src = `function f(a: Optional<{}>) {}`;
-      const expected = `function f(a: Optional<Record<any, any>>) {}`;
+      const expected = dedent`
+      import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
+      function f(a: Optional<Record<$TSFixMeAny, $TSFixMeAny>>) {}
+      `;
       expect(await transform(src)).toBe(expected);
     });
   });
@@ -601,10 +550,11 @@ class C {
     expect(await transform(src)).toBe(expected);
   });
 
-  it("Converts $Subtype to any", async () => {
+  it("Converts $Subtype to $TSFixMeAny", async () => {
     const src = `export type Test = $Subtype<Foo>;`;
     const expected = dedent`
-    export type Test = any;`;
+    import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
+    export type Test = $TSFixMeAny;`;
     expect(await transform(src)).toBe(expected);
   });
 
@@ -753,12 +703,13 @@ class C {
     `;
 
     const expected = dedent`
-    const f1: (arg1?: string) => any = A;
-    const f2: (arg1?: string | null | undefined) => any = A;
-    const f3: (arg1?: string | null | undefined, arg2?: string | null | undefined) => any = A;
-    const f4: (arg1: string, arg2?: string | null | undefined) => any = A;
-    const f5: (arg1: string, arg2: string | null | undefined, arg3: string) => any = A;
-    const f6: (arg1?: any) => any = A;
+    import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
+    const f1: (arg1?: string) => $TSFixMeAny = A;
+    const f2: (arg1?: string | null | undefined) => $TSFixMeAny = A;
+    const f3: (arg1?: string | null | undefined, arg2?: string | null | undefined) => $TSFixMeAny = A;
+    const f4: (arg1: string, arg2?: string | null | undefined) => $TSFixMeAny = A;
+    const f5: (arg1: string, arg2: string | null | undefined, arg3: string) => $TSFixMeAny = A;
+    const f6: (arg1?: $TSFixMeAny) => $TSFixMeAny = A;
     `;
     expect(await transform(src)).toBe(expected);
   });

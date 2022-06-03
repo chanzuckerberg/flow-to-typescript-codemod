@@ -4,6 +4,7 @@ import MigrationReporter from "../../runner/migration-reporter";
 import { State } from "../../runner/state";
 import { flowTypeAtPos } from "./type-at-pos";
 import { migrateType } from "../migrate/type";
+import { FlowCompatTypes } from "../utils/type-mappings";
 
 /**
  * There are some cases where it's fine if variables or parameters don't have a type
@@ -90,8 +91,12 @@ export function annotateParamsWithFlowTypeAtPos(
           // treat it as such.
           const tsType =
             flowType.type === "EmptyTypeAnnotation"
-              ? t.tsAnyKeyword()
+              ? FlowCompatTypes.any
               : migrateType(reporter, state, flowType);
+
+          if (flowType.type === "EmptyTypeAnnotation") {
+            state.usedFlowCompatTypes.add("$TSFixMeAny");
+          }
 
           // Add the type annotation! Yaay.
           param.typeAnnotation = t.tsTypeAnnotation(tsType);

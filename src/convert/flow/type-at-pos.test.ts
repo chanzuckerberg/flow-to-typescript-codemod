@@ -64,10 +64,12 @@ describe("type at position", () => {
     expect(await transform(src)).toBe(src);
   });
 
-  it("annotates explicit any", async () => {
-    const src = `function fn(a) {return a};`;
+  it("annotates explicit $TSFixMeAny", async () => {
+    const src = `function fn(a) {return a}`;
     mockedExecuteFlowTypeAtPos.mockResolvedValue('{"type": "any(explicit)"}');
-    const expected = `function fn(a: any) {return a};`;
+    const expected = dedent`
+    import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
+    function fn(a: $TSFixMeAny) {return a}`;
     expect(await transform(src)).toBe(expected);
   });
 
@@ -92,10 +94,13 @@ describe("type at position", () => {
   });
 
   it("handles empty", async () => {
-    const src = dedent`const PageWrapper = (page) => {
+    const src = dedent`
+      const PageWrapper = (page) => {
       return Wrap(page, PricePage);
     };`;
-    const expected = dedent`const PageWrapper = (page: any) => {
+    const expected = dedent`
+      import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
+    const PageWrapper = (page: $TSFixMeAny) => {
       return Wrap(page, PricePage);
     };`;
     mockedExecuteFlowTypeAtPos.mockResolvedValue('{"type": "empty"}');

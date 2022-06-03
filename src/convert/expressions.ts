@@ -11,6 +11,7 @@ import { migrateTypeParameterInstantiation } from "./migrate/type-parameter";
 import { TransformerInput } from "./transformer";
 import MigrationReporter from "../runner/migration-reporter";
 import { State } from "../runner/state";
+import { FlowCompatTypes } from "./utils/type-mappings";
 
 /**
  * Transform expression nodes and type assertions
@@ -206,22 +207,24 @@ export function transformExpressions({
             t.isArrayExpression(path.node.arguments[1]) &&
             path.node.arguments[1].elements.length === 0
           ) {
+            state.usedFlowCompatTypes.add("$TSFixMeAny");
             path.node.typeParameters = t.tsTypeParameterInstantiation([
               t.tsTypeReference(
                 t.identifier("Array"),
-                t.tsTypeParameterInstantiation([t.tsAnyKeyword()])
+                t.tsTypeParameterInstantiation([FlowCompatTypes.any])
               ),
             ]);
           } else if (
             t.isObjectExpression(path.node.arguments[1]) &&
             path.node.arguments[1].properties.length === 0
           ) {
+            state.usedFlowCompatTypes.add("$TSFixMeAny");
             path.node.typeParameters = t.tsTypeParameterInstantiation([
               t.tsTypeReference(
                 t.identifier("Record"),
                 t.tsTypeParameterInstantiation([
                   t.tsStringKeyword(),
-                  t.tsAnyKeyword(),
+                  FlowCompatTypes.any,
                 ])
               ),
             ]);

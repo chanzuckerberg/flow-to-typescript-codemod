@@ -17,7 +17,7 @@ import { migrateQualifiedIdentifier } from "./migrate/qualified-identifier";
 import { annotateParamsWithFlowTypeAtPos } from "./flow/annotate-params";
 import { functionVisitor } from "./function-visitor";
 import { TransformerInput } from "./transformer";
-import { ReactTypes } from "./utils/type-mappings";
+import { FlowCompatTypes, ReactTypes } from "./utils/type-mappings";
 import { flowTypeAtPos } from "./flow/type-at-pos";
 
 /**
@@ -247,7 +247,10 @@ export function transformDeclarations({
             node.typeAnnotation = null;
             return migrateType(reporter, state, originalType);
           } else {
-            return t.tsAnyKeyword();
+            if (isInsideFunction) {
+              state.usedFlowCompatTypes.add("$TSFixMeAny");
+            }
+            return FlowCompatTypes.any;
           }
         });
 
@@ -274,12 +277,13 @@ export function transformDeclarations({
           path.node.init?.type === "ObjectExpression" &&
           path.node.init.properties.length === 0
         ) {
+          state.usedFlowCompatTypes.add("$TSFixMeAny");
           path.node.id.typeAnnotation = t.tsTypeAnnotation(
             t.tsTypeReference(
               t.identifier("Record"),
               t.tsTypeParameterInstantiation([
                 t.tsStringKeyword(),
-                t.tsAnyKeyword(),
+                FlowCompatTypes.any,
               ])
             )
           );
@@ -289,15 +293,19 @@ export function transformDeclarations({
           // TypeScript can’t infer the type of an unannotated variable unlike Flow. We accept
           // lower levels of soundness in test files. We’ll manually annotate non-test files.
           if (path.node.init === null) {
-            path.node.id.typeAnnotation = t.tsTypeAnnotation(t.tsAnyKeyword());
+            state.usedFlowCompatTypes.add("$TSFixMeAny");
+            path.node.id.typeAnnotation = t.tsTypeAnnotation(
+              FlowCompatTypes.any
+            );
           } else if (
             path.node.init?.type === "ArrayExpression" &&
             path.node.init.elements.length === 0
           ) {
+            state.usedFlowCompatTypes.add("$TSFixMeAny");
             path.node.id.typeAnnotation = t.tsTypeAnnotation(
               t.tsTypeReference(
                 t.identifier("Array"),
-                t.tsTypeParameterInstantiation([t.tsAnyKeyword()])
+                t.tsTypeParameterInstantiation([FlowCompatTypes.any])
               )
             );
           }
@@ -327,8 +335,12 @@ export function transformDeclarations({
                   // treat it as such.
                   const tsType =
                     flowType.type === "EmptyTypeAnnotation"
-                      ? t.tsAnyKeyword()
+                      ? FlowCompatTypes.any
                       : migrateType(reporter, state, flowType);
+
+                  if (flowType.type === "EmptyTypeAnnotation") {
+                    state.usedFlowCompatTypes.add("$TSFixMeAny");
+                  }
 
                   // Typescript loses the type check on L#299 here, so we're just putting it back.
                   (path.node.id as t.Identifier).typeAnnotation =
@@ -407,8 +419,9 @@ export function transformDeclarations({
             state.config.filePath,
             getLoc(path.node)
           );
+          state.usedFlowCompatTypes.add("$TSFixMeAny");
           path.node.init.typeParameters = t.tsTypeParameterInstantiation([
-            t.tsAnyKeyword(),
+            FlowCompatTypes.any,
           ]);
         }
       }
@@ -431,10 +444,11 @@ export function transformDeclarations({
 
       if (t.isIdentifier(node.param)) {
         const { param } = node;
+        state.usedFlowCompatTypes.add("$TSFixMeAny");
         node.param = buildTSIdentifier(
           param.name,
           false,
-          t.tsTypeAnnotation(t.tsAnyKeyword())
+          t.tsTypeAnnotation(FlowCompatTypes.any)
         );
       }
     },
