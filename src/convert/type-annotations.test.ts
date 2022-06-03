@@ -1,5 +1,4 @@
 import dedent from "dedent";
-import { ConfigurableTypeProvider } from "./utils/configurable-type-provider";
 import {
   stateBuilder,
   transform,
@@ -141,7 +140,8 @@ describe("transform type annotations", () => {
     const test = React.useRef<Object>(null);
     `;
     const expected = dedent`
-    const test = React.useRef<any>(null);
+    import type {$TSFixMeObject} from 'v2/core/util/flowCompat';
+    const test = React.useRef<$TSFixMeObject>(null);
     `;
     expect(await transform(src)).toBe(expected);
   });
@@ -152,7 +152,8 @@ describe("transform type annotations", () => {
     const test = React.useRef<Object | null>(null);
     `;
     const expected = dedent`
-    const test = React.useRef<any | null>(null);
+    import type {$TSFixMeObject} from 'v2/core/util/flowCompat';
+    const test = React.useRef<$TSFixMeObject | null>(null);
     `;
     expect(await transform(src)).toBe(expected);
   });
@@ -518,25 +519,12 @@ describe("transform type annotations", () => {
     expect(await transform(src)).toBe(expected);
   });
 
-  it("Converts Object to any", async () => {
+  it("Converts Object to $TSFixMeObject", async () => {
     const src = `export type Test = Object;`;
     const expected = dedent`
-    export type Test = any;`;
+    import type {$TSFixMeObject} from 'v2/core/util/flowCompat';
+    export type Test = $TSFixMeObject;`;
     expect(await transform(src)).toBe(expected);
-  });
-
-  it("Converts Object to Record<any, any> when useStrictAnyObjectType is enabled", async () => {
-    const src = `export type Test = Object;`;
-    const expected = dedent`
-    export type Test = Record<any, any>;`;
-
-    const state = stateBuilder({
-      configurableTypeProvider: new ConfigurableTypeProvider({
-        useStrictAnyFunctionType: false,
-        useStrictAnyObjectType: true,
-      }),
-    });
-    expect(await transform(src, state)).toBe(expected);
   });
 
   describe("Empty object type", () => {
@@ -605,24 +593,12 @@ class C {
     });
   });
 
-  it("Converts Function to any", async () => {
+  it("Converts Function to $TSFixMeFunction", async () => {
     const src = `export type Test = Function;`;
     const expected = dedent`
-    export type Test = any;`;
+    import type {$TSFixMeFunction} from 'v2/core/util/flowCompat';
+    export type Test = $TSFixMeFunction;`;
     expect(await transform(src)).toBe(expected);
-  });
-
-  it("Converts Function to Function when useStrictAnyFunctionType is enabled", async () => {
-    const src = `export type Test = Function;`;
-    const expected = dedent`
-    export type Test = Function;`;
-    const state = stateBuilder({
-      configurableTypeProvider: new ConfigurableTypeProvider({
-        useStrictAnyFunctionType: true,
-        useStrictAnyObjectType: false,
-      }),
-    });
-    expect(await transform(src, state)).toBe(expected);
   });
 
   it("Converts $Subtype to any", async () => {

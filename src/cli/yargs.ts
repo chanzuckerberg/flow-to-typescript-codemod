@@ -179,16 +179,6 @@ export const parseCommands = (
             describe:
               "The message block comment used under the tag in the watermark. Only used if watermark is enabled.",
           })
-          .option("useStrictAnyObjectType", {
-            type: "boolean",
-            default: false,
-            describe: `Flow has a deprecated 'Object' type that translates to any. By default, typescriptify will take the safe route and just use an equivalent any statement. By enabling this flag, Typescriptify will attempt to use a stricter, type safe semantic equivalent of the Object type.`,
-          })
-          .option("useStrictAnyFunctionType", {
-            type: "boolean",
-            default: false,
-            describe: `Flow has a deprecated 'AnyFunction' type that translates to any. By default, typescriptify will take the safe route and just use an equivalent any statement. By enabling this flag, Typescriptify will attempt to use a stricter, type safe semantic equivalent of the AnyFunction type.`,
-          })
           .option("dropImportExtensions", {
             type: "boolean",
             default: false,
