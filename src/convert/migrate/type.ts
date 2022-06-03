@@ -21,6 +21,7 @@ import { State } from "../../runner/state";
 import { matchesFullyQualifiedName } from "../utils/matchers";
 import { migrateFunctionParameters } from "./function-parameter";
 import { MetaData } from "./metadata";
+import { FlowCompatTypes } from "../utils/type-mappings";
 
 export function migrateType(
   reporter: MigrationReporter,
@@ -101,7 +102,7 @@ function actuallyMigrateType(
             )
           : null;
 
-      // `Object` → flowAnyObjectType
+      // `Object` → $TSFixMeObject
       // Object in Flow translates to any. The codemod is configurable to allow
       // either a loose translation to any, or a stricter semantic interpretation
       if (id.type === "Identifier" && id.name === "Object" && !params) {
@@ -109,10 +110,11 @@ function actuallyMigrateType(
           state.config.filePath,
           id.loc as t.SourceLocation
         );
-        return state.configurableTypeProvider.flowAnyObjectType;
+        state.usedFlowCompatTypes.add("$TSFixMeObject");
+        return FlowCompatTypes.object;
       }
 
-      // `Function` → flowAnyFunctionType
+      // `Function` → $TSFixMeFunction
       // Function in Flow translates to any. The codemod is configurable to allow
       // either a loose translation to any, or a stricter semantic interpretation
       if (id.type === "Identifier" && id.name === "Function" && !params) {
@@ -120,7 +122,8 @@ function actuallyMigrateType(
           state.config.filePath,
           id.loc as t.SourceLocation
         );
-        return state.configurableTypeProvider.flowAnyFunctionType;
+        state.usedFlowCompatTypes.add("$TSFixMeFunction");
+        return FlowCompatTypes.function;
       }
 
       // Emit a warning if someone accidentally used String instead of string (literal type)

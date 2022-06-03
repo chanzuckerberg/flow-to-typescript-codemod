@@ -1,3 +1,5 @@
+import * as t from "@babel/types";
+
 export const ReactTypes = {
   Node: "ReactNode",
   Child: "ReactChild",
@@ -30,3 +32,10 @@ export const SyntheticEvents = {
 export const MomentTypes = {
   MomentDuration: "Duration",
 } as const;
+
+export const FlowCompatTypes = {
+  function: t.tsTypeReference(t.identifier("$TSFixMeFunction")),
+  object: t.tsTypeReference(t.identifier("$TSFixMeObject")),
+};
+
+export type FlowCompatTypeName = "$TSFixMeObject" | "$TSFixMeFunction";

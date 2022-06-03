@@ -1,4 +1,4 @@
-import { ConfigurableTypeProvider } from "../convert/utils/configurable-type-provider";
+import type { FlowCompatTypeName } from "../convert/utils/type-mappings";
 
 export type State = {
   // Set this flag if the codemod encounters JSX code
@@ -6,6 +6,12 @@ export type State = {
 
   // Set this flag if utility types were encountered, and an import should be added
   usedUtils: boolean;
+
+  /**
+   * Keeps track of `v2/core/util/flowCompat` types that have been
+   * added to a file and need to be imported
+   */
+  readonly usedFlowCompatTypes: Set<FlowCompatTypeName>;
 
   // Config is used to store immutable configuration
   readonly config: {
@@ -36,7 +42,4 @@ export type State = {
     // Should we check flow types or just use any?
     readonly disableFlow: boolean;
   };
-
-  // A static type provider for types that may change based on flags
-  readonly configurableTypeProvider: ConfigurableTypeProvider;
 };

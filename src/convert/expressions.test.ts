@@ -24,7 +24,8 @@ describe("transform expressions", () => {
   it("typecasts nested cast object", async () => {
     const src = `((x: Object): T);`;
     const expected = dedent`
-    (x as any as T);`;
+    import type {$TSFixMeObject} from 'v2/core/util/flowCompat';
+    (x as $TSFixMeObject as T);`;
     expect(await transform(src)).toBe(expected);
     expectMigrationReporterMethodCalled("usedFlowAnyObject");
   });
@@ -32,7 +33,8 @@ describe("transform expressions", () => {
   it("typecasts nested cast function", async () => {
     const src = `((x: Function): T);`;
     const expected = dedent`
-    (x as any as T);`;
+    import type {$TSFixMeFunction} from 'v2/core/util/flowCompat';
+    (x as $TSFixMeFunction as T);`;
     expect(await transform(src)).toBe(expected);
     expectMigrationReporterMethodCalled("usedFlowAnyFunction");
   });

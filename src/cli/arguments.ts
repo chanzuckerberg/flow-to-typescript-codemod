@@ -36,10 +36,6 @@ export interface ConvertCommandCliArgs extends SharedCommandCliArgs {
   write: boolean;
   // Change the output dir of the codemod:
   target: string;
-  // Flow has a deprecated 'Object' type that translates to any. This flag will take the semantic meaning of any object when set
-  useStrictAnyObjectType: boolean;
-  // Flow has a deprecated 'Function' type that translates to any. This flag will take the semantic meaning of any function when set
-  useStrictAnyFunctionType: boolean;
   // Remove `.js` and `.jsx` file extensions which will change
   dropImportExtensions: boolean;
   // Add support for spread props on React Components

@@ -10,7 +10,6 @@ import { ConvertCommandCliArgs } from "../cli/arguments";
 import { defaultTransformerChain } from "../convert/default-transformer-chain";
 import { watermarkTransformRunner } from "../convert/transform-runners";
 import { State } from "./state";
-import { ConfigurableTypeProvider } from "../convert/utils/configurable-type-provider";
 import { hasDeclaration } from "../convert/utils/common";
 import { FlowFileList, FlowFileType } from "./find-flow-files";
 import { logger } from "./logger";
@@ -60,6 +59,7 @@ export async function processBatchAsync(
         const state: State = {
           hasJsx: false,
           usedUtils: false,
+          usedFlowCompatTypes: new Set(),
           config: {
             filePath,
             isTestFile,
@@ -71,10 +71,6 @@ export async function processBatchAsync(
             forceTSX: options.forceTSX,
             disableFlow: options.disableFlow,
           },
-          configurableTypeProvider: new ConfigurableTypeProvider({
-            useStrictAnyFunctionType: options.useStrictAnyFunctionType,
-            useStrictAnyObjectType: options.useStrictAnyObjectType,
-          }),
         };
         const transforms = Array.from(defaultTransformerChain);
 

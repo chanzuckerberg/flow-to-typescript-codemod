@@ -9,7 +9,6 @@ import { defaultTransformerChain } from "../default-transformer-chain";
 import { watermarkTransformRunner } from "../transform-runners";
 import { Transformer } from "../transformer";
 import { State } from "../../runner/state";
-import { ConfigurableTypeProvider } from "./configurable-type-provider";
 import { FixCommandCliArgs } from "../../cli/arguments";
 import { FixCommandState } from "../../fix/state";
 
@@ -103,27 +102,19 @@ type DeepPartialOverride<T> = {
   [P in keyof T]?: DeepPartialOverride<T[P]>;
 };
 
-type StateLessConfigurableTypeProvider = DeepPartialOverride<
-  Omit<State, "configurableTypeProvider">
-> &
-  Partial<Pick<State, "configurableTypeProvider">>;
+type StateLessConfigurableTypeProvider = DeepPartialOverride<State>;
 
 const stateBuilder = (
   stateOverrides: StateLessConfigurableTypeProvider = {}
 ): State => {
   const filePath = "./fake/test.js";
   const isTestFile = filePath.endsWith(".test.js");
-  const typeProvider =
-    stateOverrides.configurableTypeProvider ??
-    new ConfigurableTypeProvider({
-      useStrictAnyFunctionType: false,
-      useStrictAnyObjectType: false,
-    });
 
   return {
     hasJsx: false,
     usedUtils: false,
     ...stateOverrides,
+    usedFlowCompatTypes: new Set(),
     config: {
       filePath,
       isTestFile,
@@ -136,7 +127,6 @@ const stateBuilder = (
       disableFlow: false,
       ...stateOverrides.config,
     },
-    configurableTypeProvider: typeProvider,
   };
 };
 

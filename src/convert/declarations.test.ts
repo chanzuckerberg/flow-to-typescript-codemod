@@ -221,12 +221,13 @@ describe("transform declarations", () => {
 
   it("transforms extended generic class declarations", async () => {
     const src = dedent`
-    class Base<P = {}, S = {}> {};
-    class Impl extends Base<Function, {}> {};
+    class Base<P = {}, S = {}> {}
+    class Impl extends Base<Function, {}> {}
     `;
     const expected = dedent`
-    class Base<P = any, S = any> {};
-    class Impl extends Base<any, Record<any, any>> {};
+    import type {$TSFixMeFunction} from 'v2/core/util/flowCompat';
+    class Base<P = any, S = any> {}
+    class Impl extends Base<$TSFixMeFunction, Record<any, any>> {}
     `;
     expect(await transform(src)).toBe(expected);
   });
