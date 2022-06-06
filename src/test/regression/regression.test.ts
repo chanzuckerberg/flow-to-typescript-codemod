@@ -97,6 +97,10 @@ function replaceImports(data: string) {
       `'${require.resolve(
         "../../../node_modules/@types/react/index.d"
       )}'`.replace(/.d.ts/, "")
+    )
+    .replace(
+      /v2\/core\/util\/flowCompat/,
+      require.resolve("../../../src/flowCompat.ts").replace(/.ts/, "")
     );
 }
 

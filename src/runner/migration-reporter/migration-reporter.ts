@@ -195,7 +195,7 @@ class MigrationReporter {
       MigrationReportItemSeverity.info,
       filePath,
       location,
-      "The Object type in Flow is deprecated and typechecks as `any`. This will become an `any` in TypeScript unless given a more specific type."
+      "The Object type in Flow is deprecated and typechecks as `any`. This will become an `$TSFixMeObject` in TypeScript."
     );
   }
 
@@ -205,7 +205,7 @@ class MigrationReporter {
       MigrationReportItemSeverity.info,
       filePath,
       location,
-      "The Function type in Flow is deprecated and typechecks as `any`. This will become an `any` in TypeScript unless given a more specific type."
+      "The Function type in Flow is deprecated and typechecks as `any`. This will become an `$TSFixMeFunction` in TypeScript."
     );
   }
 

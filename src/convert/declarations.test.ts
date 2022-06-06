@@ -186,13 +186,16 @@ describe("transform declarations", () => {
   });
 
   it("removes annotations from constructors", async () => {
-    const src = dedent`class Test {
+    const src = dedent`
+    class Test {
       constructor(props: any): void {
           console.log('test');
       }
     }`;
-    const expected = dedent`class Test {
-      constructor(props: any) {
+    const expected = dedent`
+    import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
+    class Test {
+      constructor(props: $TSFixMeAny) {
           console.log('test');
       }
     }`;
@@ -225,21 +228,22 @@ describe("transform declarations", () => {
     class Impl extends Base<Function, {}> {}
     `;
     const expected = dedent`
-    import type {$TSFixMeFunction} from 'v2/core/util/flowCompat';
-    class Base<P = any, S = any> {}
-    class Impl extends Base<$TSFixMeFunction, Record<any, any>> {}
+    import type {$TSFixMeFunction, $TSFixMeAny} from 'v2/core/util/flowCompat';
+    class Base<P = $TSFixMeAny, S = $TSFixMeAny> {}
+    class Impl extends Base<$TSFixMeFunction, Record<$TSFixMeAny, $TSFixMeAny>> {}
     `;
     expect(await transform(src)).toBe(expected);
   });
 
   it("removes trailing commas from extended generic class declarations", async () => {
     const src = dedent`
-    class Base<P = any, S = any> {};
-    class Impl extends Base<{},> {};
+    class Base<P = any, S = any> {}
+    class Impl extends Base<{},> {}
     `;
     const expected = dedent`
-    class Base<P = any, S = any> {};
-    class Impl extends Base<Record<any, any>> {};
+    import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
+    class Base<P = $TSFixMeAny, S = $TSFixMeAny> {}
+    class Impl extends Base<Record<$TSFixMeAny, $TSFixMeAny>> {}
     `;
     expect(await transform(src)).toBe(expected);
   });
@@ -282,10 +286,11 @@ describe("transform declarations", () => {
     expect(await transform(src)).toBe(expected);
   });
 
-  it("converts $Subtype to any", async () => {
+  it("converts $Subtype to $TSFixMeAny", async () => {
     const src = `type Test = $Subtype<number>;`;
     const expected = dedent`
-    type Test = any;`;
+    import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
+    type Test = $TSFixMeAny;`;
     expect(await transform(src)).toBe(expected);
     expectMigrationReporterMethodCalled("usedFlowSubtype");
   });
@@ -423,8 +428,9 @@ describe("transform declarations", () => {
       const src = dedent`export class MyClass {
       foo: (bar: ?number, baz: string) => any;
     }`;
-      const expected = dedent`export class MyClass {
-      foo: (bar: number | null | undefined, baz: string) => any;
+      const expected = dedent`import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
+    export class MyClass {
+      foo: (bar: number | null | undefined, baz: string) => $TSFixMeAny;
     }`;
 
       expect(await transform(src)).toBe(expected);
@@ -471,7 +477,7 @@ describe("transform declarations", () => {
 
   // Try Catch
 
-  it("Adds any to catch clause when parameter is present", async () => {
+  it("Adds $TSFixMeAny to catch clause when parameter is present", async () => {
     const src = dedent`
     try {
       const foo = 'bar';
@@ -480,9 +486,10 @@ describe("transform declarations", () => {
     }
     `;
     const expected = dedent`
+    import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
     try {
       const foo = 'bar';
-    } catch (e: any) {
+    } catch (e: $TSFixMeAny) {
       console.log(e);
     }
     `;
@@ -557,23 +564,32 @@ describe("transform declarations", () => {
   });
 
   describe("untyped usestate", () => {
-    it("Applies any and creates warning for untyped empty useState.", async () => {
+    it("Applies $TSFixMeAny and creates warning for untyped empty useState.", async () => {
       const src = `const test = React.useState();`;
-      const expected = `const test = React.useState<any>();`;
+      const expected = dedent`
+      import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
+      const test = React.useState<$TSFixMeAny>();
+      `;
       expect(await transform(src)).toBe(expected);
       expectMigrationReporterMethodCalled("untypedStateInitialization");
     });
 
-    it("Applies any and creates warning Creates a warning for untyped null useState.", async () => {
+    it("Applies $TSFixMeAny and creates warning Creates a warning for untyped null useState.", async () => {
       const src = `const test = React.useState(null);`;
-      const expected = `const test = React.useState<any>(null);`;
+      const expected = dedent`
+      import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
+      const test = React.useState<$TSFixMeAny>(null);
+      `;
       expect(await transform(src)).toBe(expected);
       expectMigrationReporterMethodCalled("untypedStateInitialization");
     });
 
-    it("Applies any and creates warning Creates a warning for untyped undefined useState.", async () => {
+    it("Applies $TSFixMeAny and creates warning Creates a warning for untyped undefined useState.", async () => {
       const src = `const test = React.useState(undefined);`;
-      const expected = `const test = React.useState<any>(undefined);`;
+      const expected = dedent`
+      import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
+      const test = React.useState<$TSFixMeAny>(undefined);
+      `;
       expect(await transform(src)).toBe(expected);
       expectMigrationReporterMethodCalled("untypedStateInitialization");
     });
@@ -635,9 +651,13 @@ describe("transform declarations", () => {
       expect(await transform(src)).toBe(src);
       expectMigrationReporterMethodNotCalled("foundDeclarationFile");
     });
-    it("ignores declaration files with vars", async () => {
+    it("does not ignore declaration files with vars", async () => {
       const src = `declare export var Integrations: any;`;
-      expect(await transform(src)).toBe(src);
+      const expected = dedent`
+      import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
+      declare export var Integrations: $TSFixMeAny;
+      `;
+      expect(await transform(src)).toBe(expected);
       expectMigrationReporterMethodNotCalled("foundDeclarationFile");
     });
     it("ignores declaration files with classes", async () => {
@@ -653,7 +673,8 @@ describe("transform declarations", () => {
       const a = {}
     `;
       const expected = dedent`
-      const a: Record<string, any> = {}
+      import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
+      const a: Record<string, $TSFixMeAny> = {}
     `;
       expect(await transform(src)).toBe(expected);
     });
@@ -711,7 +732,7 @@ describe("transform declarations", () => {
       expect(await transform(src)).toBe(expected);
     });
 
-    it("should supply any if one of the types is missing", async () => {
+    it("should supply $TSFixMeAny if one of the types is missing", async () => {
       const src = dedent`
       function fn1([filter, sort: Sort]) {}
       class Cls {fn2([filter, sort: Sort]) {}}
@@ -721,12 +742,13 @@ describe("transform declarations", () => {
       var obj2 = {fn6: ([filter, sort: Sort]) => {}}
       `;
       const expected = dedent`
-      function fn1([filter, sort]: [any, Sort]) {}
-      class Cls {fn2([filter, sort]: [any, Sort]) {}}
-      const fn3 = ([filter, sort]: [any, Sort]) => {}
-      class PrivateCls {#fn4([filter, sort]: [any, Sort]) {}}
-      var obj1 = {fn5([filter, sort]: [any, Sort]) {}}
-      var obj2 = {fn6: ([filter, sort]: [any, Sort]) => {}}
+      import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
+      function fn1([filter, sort]: [$TSFixMeAny, Sort]) {}
+      class Cls {fn2([filter, sort]: [$TSFixMeAny, Sort]) {}}
+      const fn3 = ([filter, sort]: [$TSFixMeAny, Sort]) => {}
+      class PrivateCls {#fn4([filter, sort]: [$TSFixMeAny, Sort]) {}}
+      var obj1 = {fn5([filter, sort]: [$TSFixMeAny, Sort]) {}}
+      var obj2 = {fn6: ([filter, sort]: [$TSFixMeAny, Sort]) => {}}
       `;
       expect(await transform(src)).toBe(expected);
     });
@@ -792,7 +814,8 @@ describe("transform declarations", () => {
       const arr = [];
       `;
       const expected = dedent`
-      const arr: any = [];
+      import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
+      const arr: $TSFixMeAny = [];
       `;
 
       mockFlowTypeAtPos.mockResolvedValue(t.emptyTypeAnnotation());

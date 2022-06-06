@@ -140,8 +140,9 @@ describe("transform expressions", () => {
         return class extends React.Component<{||}, {|bar: string|}> {};
       };`;
       const expected = dedent`
+      import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
       const test = () => {
-        return class extends React.Component<Record<any, any>, {
+        return class extends React.Component<Record<$TSFixMeAny, $TSFixMeAny>, {
           bar: string
         }> {};
       };`;
@@ -202,17 +203,19 @@ describe("transform expressions", () => {
       const a = [1, 2, 3].reduce((acc: number[], val) => [...acc, val], []);`;
 
       const expected = dedent`
-      const a = [1, 2, 3].reduce<Array<any>>((acc: number[], val) => [...acc, val], []);`;
+      import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
+      const a = [1, 2, 3].reduce<Array<$TSFixMeAny>>((acc: number[], val) => [...acc, val], []);`;
       expect(await transform(src)).toBe(expected);
     });
 
-    it("should add a Record<string, any> type if accumulator is an object", async () => {
+    it("should add a Record<string, $TSFixMeAny> type if accumulator is an object", async () => {
       const src = dedent`
       // @flow
       const a = [1, 2, 3].reduce((acc: any, val) => ({...acc, [val]: val}), {});`;
 
       const expected = dedent`
-      const a = [1, 2, 3].reduce<Record<string, any>>((acc: any, val) => ({...acc, [val]: val}), {});`;
+      import type {$TSFixMeAny} from 'v2/core/util/flowCompat';
+      const a = [1, 2, 3].reduce<Record<string, $TSFixMeAny>>((acc: $TSFixMeAny, val) => ({...acc, [val]: val}), {});`;
       expect(await transform(src)).toBe(expected);
     });
   });

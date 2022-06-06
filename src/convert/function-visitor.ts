@@ -11,6 +11,7 @@ import { State } from "../runner/state";
 import { annotateParamsWithFlowTypeAtPos } from "./flow/annotate-params";
 import { handleAsyncReturnType } from "./utils/handle-async-function-return-type";
 import { getLoc } from "./utils/common";
+import { FlowCompatTypes } from "./utils/type-mappings";
 
 type FunctionVisitorProps = {
   awaitPromises: Array<Promise<unknown>>;
@@ -39,8 +40,9 @@ export const functionVisitor = <
     if (state.config.isTestFile) {
       for (const param of path.node.params) {
         if (!(param as t.Identifier).typeAnnotation) {
+          state.usedFlowCompatTypes.add("$TSFixMeAny");
           (param as t.Identifier).typeAnnotation = t.tsTypeAnnotation(
-            t.tsAnyKeyword()
+            FlowCompatTypes.any
           );
         }
       }
